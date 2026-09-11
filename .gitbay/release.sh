@@ -26,9 +26,7 @@ if [ "$tag" != "v$version" ]; then
 	exit 1
 fi
 
-# Reach the forge on whatever host the runner cloned from, rather than a name it
-# may not have in known_hosts.
-host=$(git remote get-url origin | sed 's#.*://[^@]*@##; s#[:/].*##')
+. .gitbay/bot-ssh.sh
 
 dist=dist
 mkdir -p "$dist"
@@ -52,10 +50,10 @@ done
 # Notes come from the annotated tag, so the person cutting the release writes
 # them at the moment they decide to cut it (`git tag -a "$tag" -F notes.md`).
 git tag -l --format='%(contents)' "$tag" |
-	ssh "git@$host" release create "$repo" "$tag" --title "${tag#v}" --file -
+	$SSH "$GITBAY_SSH" release create "$repo" "$tag" --title "${tag#v}" --file -
 
 for f in "$dist"/*; do
-	ssh "git@$host" release asset add "$repo" "$tag" "$(basename "$f")" <"$f"
+	$SSH "$GITBAY_SSH" release asset add "$repo" "$tag" "$(basename "$f")" <"$f"
 	echo "attached $(basename "$f")"
 done
 
